@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal               = document.getElementById('confirm-modal');
     const modalConfirmBtn     = document.getElementById('modal-confirm');
     const modalCancelBtn      = document.getElementById('modal-cancel');
+    const clearFormBtn        = document.getElementById('clear-form-btn');
+    // Botón para limpiar el formulario
+    if (clearFormBtn) {
+        clearFormBtn.addEventListener('click', clearAll);
+    }
 
     // Historial
     const historyList         = document.getElementById('history-list');
@@ -50,7 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
         historyList.innerHTML = history.map((item, idx) => {
             const notif = item.notification;
             const agents = item.agents || [];
-            return `<li>
+            const finished = item.finished;
+            return `<li${finished ? ' class="history-finished"' : ''}>
                 <div class="history-title">${notif.nombre || 'Sin nombre'} <span class="history-meta">(${new Date(item.timestamp).toLocaleString('es-AR')})</span></div>
                 <div class="history-meta">Ficha: ${notif.ficha || '-'} | ID: ${notif.id || '-'}</div>
                 <div class="history-meta">Nosocomio: ${notif.nosocomio || '-'} | Horario: ${notif.horario || '-'}</div>
@@ -58,13 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${agents.map(a => `<span class="history-agent-badge">${a.name}</span>`).join(' ')}
                 </div>
                 <div class="history-actions-row">
-                    <button class="btn-extend" data-history-idx="${idx}">Extender</button>
+                    ${finished
+                        ? '<span class="history-finished-label">Finalizado</span>'
+                        : `<button class="btn-extend" data-history-idx="${idx}">Extender</button>
+                           <button class="btn-finish" data-finish-idx="${idx}">Terminar pedido</button>`}
                 </div>
             </li>`;
         }).join('');
     }
 
-    // Cargar datos de una solicitud previa al formulario
+    // Extensión: variables para agentes extra
+    let extendingRequestId = null;
+
+
     function loadHistoryToForm(historyIdx) {
         const history = requestTracker.getHistory();
         const item = history[historyIdx];
@@ -88,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         horasHastaInput.value = notif.horario?.split('—')[1]?.replace('hs.', '').trim() || '';
         diagnosticoInput.value = notif.diagnostico || '';
         descriptionInput.value = notif.obs || '';
-        // Mostrar preview vacío para que el usuario pueda modificar y buscar más agentes
+        extendingRequestId = item.id;
         showEmpty();
     }
 
@@ -101,8 +113,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (idx !== null) {
                     loadHistoryToForm(Number(idx));
                 }
+                return;
+            }
+            const btnFinish = e.target.closest('.btn-finish');
+            if (btnFinish) {
+                const idx = btnFinish.getAttribute('data-finish-idx');
+                if (idx !== null) {
+                    finishRequest(Number(idx));
+                }
             }
         });
+    }
+
+    // Lógica para terminar un pedido y liberar agentes
+    function finishRequest(idx) {
+        if (!confirm('¿Seguro que desea terminar este pedido? Los agentes quedarán disponibles para nuevas solicitudes.')) return;
+        requestTracker.finishRequestByIdx(idx);
+        renderHistory();
     }
 
     // Limpiar historial
@@ -221,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmedActions.classList.add('hidden');
         previewContent.classList.remove('hidden');
         previewActions.classList.remove('hidden');
+        // Ya no hay opción de agentes extra
     }
 
     function showEmpty() {
@@ -245,22 +273,42 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedAgents = [];
         notificationPreview.innerHTML = '';
         agentPreviewList.innerHTML = '';
+        extendingRequestId = null;
         showEmpty();
     }
+    // Eliminada lógica de agregar agentes extra
+        // Form submit — find agents and show preview
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let agentCount = 5;
+            // Usar el input de cantidad de agentes del formulario principal siempre
+            const mainAgentsInput = document.getElementById('main-agents-input');
+            if (mainAgentsInput) {
+                agentCount = parseInt(mainAgentsInput.value, 10);
+                if (isNaN(agentCount) || agentCount < 1) agentCount = 1;
+            }
+            // Obtener IDs de agentes ya notificados en pedidos NO finalizados
+            let alreadyNotifiedIds = [];
+            const history = requestTracker.getHistory();
+            history.forEach(item => {
+                if (!item.finished && item.agents && Array.isArray(item.agents)) {
+                    alreadyNotifiedIds.push(...item.agents.map(a => a.id));
+                }
+            });
+            // Filtrar agentes disponibles que no hayan sido notificados en pedidos activos
+            const allAvailable = mockDatabase.getAllAgents().filter(a => a.available && !alreadyNotifiedIds.includes(a.id));
+            const raw = allAvailable.slice(0, agentCount);
+            selectedAgents = assignDays(raw);
+            if (selectedAgents.length === 0) {
+                alert('No hay agentes disponibles en este momento.');
+                return;
+            }
+            renderNotification(buildNotification());
+            renderAgents(selectedAgents);
+            showPreview();
+        });
 
-    // Form submit — find agents and show preview
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const raw = agentSelector.selectAgents(5);
-        selectedAgents = assignDays(raw);
-        if (selectedAgents.length === 0) {
-            alert('No hay agentes disponibles en este momento.');
-            return;
-        }
-        renderNotification(buildNotification());
-        renderAgents(selectedAgents);
-        showPreview();
-    });
+    // ...existing code...
 
     // Open modal
     confirmBtn.addEventListener('click', () => {
@@ -274,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.add('hidden');
         showConfirmed(selectedAgents.length);
         selectedAgents = [];
+        extendingRequestId = null;
         renderHistory();
     });
 

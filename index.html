@@ -27,7 +27,15 @@
         </header>
 
         <div class="workspace">
-            <!-- LEFT: Form -->
+            <!-- LEFT: Historial -->
+            <div class="panel panel-history">
+                <h2>Historial de Solicitudes</h2>
+                <ul id="history-list" class="history-list"></ul>
+                <div class="history-actions">
+                    <button id="clear-history" class="btn-secondary">Limpiar Historial</button>
+                </div>
+            </div>
+            <!-- MIDDLE: Form -->
             <div class="panel panel-form">
                 <form id="agent-request-form">
                     <h2>Nueva Solicitud de Refuerzo</h2>
@@ -128,24 +136,32 @@
                         <textarea id="description" rows="2" placeholder="Condiciones especiales, antecedentes de fuga, etc."></textarea>
                     </div>
 
-                    <div class="form-actions">
+                    <div class="form-group" style="max-width:180px;">
+                        <label for="main-agents-input">Cantidad de agentes</label>
+                        <input type="number" id="main-agents-input" min="1" max="10" value="5" />
+                    </div>
+                    <div class="form-actions" style="display:flex;gap:0.7rem;">
                         <button type="submit" class="btn-primary">Buscar Agentes Disponibles</button>
+                        <button type="button" id="clear-form-btn" class="btn-secondary">Limpiar Formulario</button>
                     </div>
                 </form>
             </div>
 
-            <!-- MIDDLE: Preview -->
+            <!-- RIGHT: Preview -->
             <div class="panel panel-preview">
                 <div id="preview-empty" class="preview-placeholder">
                     <span>📋</span>
                     <p>Complete el formulario y presione <strong>Buscar Agentes</strong> para ver la notificación y los agentes asignados.</p>
                 </div>
 
+
                 <div id="preview-content" class="hidden">
                     <div class="notification-model">
                         <h3>📋 Notificación a enviar</h3>
                         <div id="notification-preview"></div>
                     </div>
+
+                    <!-- Eliminado: selector y botón para agentes adicionales -->
 
                     <h3 class="agents-subtitle">Agentes a Contactar</h3>
                     <ul id="agent-preview-list"></ul>
@@ -164,14 +180,7 @@
                 <div id="confirmed-actions" class="panel-footer hidden">
                     <button id="new-request" class="btn-secondary">Nueva Solicitud</button>
                 </div>
-            </div>
-            <!-- RIGHT: Historial -->
-            <div class="panel panel-history">
-                <h2>Historial de Solicitudes</h2>
-                <ul id="history-list" class="history-list"></ul>
-                <div class="history-actions">
-                    <button id="clear-history" class="btn-secondary">Limpiar Historial</button>
-                </div>
+            </div>            
             </div>
         </div>
     </div>
