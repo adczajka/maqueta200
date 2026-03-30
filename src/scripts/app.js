@@ -35,6 +35,86 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalConfirmBtn     = document.getElementById('modal-confirm');
     const modalCancelBtn      = document.getElementById('modal-cancel');
 
+    // Historial
+    const historyList         = document.getElementById('history-list');
+    const clearHistoryBtn     = document.getElementById('clear-history');
+
+    // Renderizar historial de solicitudes
+    function renderHistory() {
+        const history = requestTracker.getHistory();
+        if (!historyList) return;
+        if (!history || history.length === 0) {
+            historyList.innerHTML = '<li style="color:var(--color-muted);text-align:center;">Sin solicitudes previas</li>';
+            return;
+        }
+        historyList.innerHTML = history.map((item, idx) => {
+            const notif = item.notification;
+            const agents = item.agents || [];
+            return `<li>
+                <div class="history-title">${notif.nombre || 'Sin nombre'} <span class="history-meta">(${new Date(item.timestamp).toLocaleString('es-AR')})</span></div>
+                <div class="history-meta">Ficha: ${notif.ficha || '-'} | ID: ${notif.id || '-'}</div>
+                <div class="history-meta">Nosocomio: ${notif.nosocomio || '-'} | Horario: ${notif.horario || '-'}</div>
+                <div class="history-agents">
+                    ${agents.map(a => `<span class="history-agent-badge">${a.name}</span>`).join(' ')}
+                </div>
+                <div class="history-actions-row">
+                    <button class="btn-extend" data-history-idx="${idx}">Extender</button>
+                </div>
+            </li>`;
+        }).join('');
+    }
+
+    // Cargar datos de una solicitud previa al formulario
+    function loadHistoryToForm(historyIdx) {
+        const history = requestTracker.getHistory();
+        const item = history[historyIdx];
+        if (!item) return;
+        const notif = item.notification;
+        // Separar apellidos y nombres
+        const nombreSplit = notif.nombre.split(',');
+        const apellidos = (nombreSplit[0] || '').trim().split(' ');
+        apellido1Input.value = apellidos[0] || '';
+        apellido2Input.value = apellidos[1] || '';
+        nombresInput.value = (nombreSplit[1] || '').trim();
+        fichaInput.value = notif.ficha || '';
+        inmateIdInput.value = notif.id || '';
+        aCargoInput.value = notif.aCargo || '';
+        delitoInput.value = notif.delito || '';
+        venceInput.value = notif.vence || '';
+        nosocomioInput.value = notif.nosocomio || '';
+        pisoInput.value = (notif.ubicacion?.match(/Piso (\w+)/) || [])[1] || '';
+        habitacionInput.value = (notif.ubicacion?.match(/Hab\. (\w+)/) || [])[1] || '';
+        horasDesdeInput.value = notif.horario?.split('—')[0]?.replace('hs.', '').trim() || '';
+        horasHastaInput.value = notif.horario?.split('—')[1]?.replace('hs.', '').trim() || '';
+        diagnosticoInput.value = notif.diagnostico || '';
+        descriptionInput.value = notif.obs || '';
+        // Mostrar preview vacío para que el usuario pueda modificar y buscar más agentes
+        showEmpty();
+    }
+
+    // Delegar click en botón extender
+    if (historyList) {
+        historyList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-extend');
+            if (btn) {
+                const idx = btn.getAttribute('data-history-idx');
+                if (idx !== null) {
+                    loadHistoryToForm(Number(idx));
+                }
+            }
+        });
+    }
+
+    // Limpiar historial
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', () => {
+            if (confirm('¿Seguro que desea borrar todo el historial?')) {
+                requestTracker.clearHistory();
+                renderHistory();
+            }
+        });
+    }
+
     const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
     let selectedAgents = [];
@@ -189,10 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Modal — confirm
     modalConfirmBtn.addEventListener('click', () => {
-        requestTracker.record(selectedAgents);
+        const notificationData = buildNotification();
+        requestTracker.record(selectedAgents, notificationData);
         modal.classList.add('hidden');
         showConfirmed(selectedAgents.length);
         selectedAgents = [];
+        renderHistory();
     });
 
     // Modal — cancel (go back to preview, allow editing)
@@ -208,4 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // New request
     newRequestBtn.addEventListener('click', clearAll);
+
+    // Render historial al cargar
+    renderHistory();
 });
