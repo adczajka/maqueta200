@@ -1,0 +1,27 @@
+[
+    {
+        "name": "Agent A",
+        "status": "available",
+        "ability": "firefighter"
+    },
+    {
+        "name": "Agent B",
+        "status": "on vacation",
+        "ability": "medic"
+    },
+    {
+        "name": "Agent C",
+        "status": "sick leave",
+        "ability": "engineer"
+    },
+    {
+        "name": "Agent D",
+        "status": "available",
+        "ability": "paramedic"
+    },
+    {
+        "name": "Agent E",
+        "status": "available",
+        "ability": "firefighter"
+    }
+]

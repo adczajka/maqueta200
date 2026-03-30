@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPB Notificador</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3>⚠️ Confirmar Solicitud</h3>
+            <p>¿Está seguro que desea notificar a los agentes seleccionados? Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+                <button id="modal-confirm" class="btn-primary">✅ Sí, confirmar</button>
+                <button id="modal-cancel" class="btn-secondary">✖ Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-wrapper">
+        <header>
+            <h1>🏛️ SPB Notificador</h1>
+            <p class="subtitle">Sistema de solicitud de refuerzos para custodia externa</p>
+        </header>
+
+        <div class="workspace">
+            <!-- LEFT: Form -->
+            <div class="panel panel-form">
+                <form id="agent-request-form">
+                    <h2>Nueva Solicitud de Refuerzo</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="apellido1">Primer Apellido</label>
+                            <input type="text" id="apellido1" placeholder="Ej: García" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="apellido2">Segundo Apellido</label>
+                            <input type="text" id="apellido2" placeholder="Ej: López" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombres">Nombres</label>
+                        <input type="text" id="nombres" placeholder="Ej: Juan Carlos" required />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ficha">Ficha Criminológica</label>
+                            <input type="text" id="ficha" placeholder="000000" maxlength="6" pattern="\d{6}" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="inmate-id">ID</label>
+                            <input type="number" id="inmate-id" placeholder="Ej: 1234" min="1" max="99999999" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="a-cargo">A cargo de</label>
+                        <input type="text" id="a-cargo" placeholder="Ej: Juzgado Federal N°3" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="delito">Delito</label>
+                        <input type="text" id="delito" placeholder="Ej: Homicidio calificado" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vence">Vence</label>
+                        <input type="date" id="vence" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nosocomio">Nosocomio</label>
+                        <select id="nosocomio" required>
+                            <option value="" disabled selected>Seleccionar...</option>
+                            <option>Hospital Ramos Mejía</option>
+                            <option>Hospital Borda</option>
+                            <option>Hospital Álvarez</option>
+                            <option>Hospital Durand</option>
+                            <option>Hospital Piñero</option>
+                            <option>Hospital Muñiz</option>
+                            <option>Hospital Fernández</option>
+                            <option>Hospital Rivadavia</option>
+                            <option>Hospital Argerich</option>
+                            <option>Hospital Santojanni</option>
+                            <option>Hospital Zubizarreta</option>
+                            <option>Hospital Vélez Sarsfield</option>
+                            <option>Hospital San Martín (La Plata)</option>
+                            <option>Hospital Posadas</option>
+                            <option>Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="piso">Piso</label>
+                            <input type="text" id="piso" placeholder="Ej: 3" />
+                        </div>
+                        <div class="form-group">
+                            <label for="habitacion">Habitación</label>
+                            <input type="text" id="habitacion" placeholder="Ej: 12B" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="horas-desde">Horario desde</label>
+                            <input type="time" id="horas-desde" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="horas-hasta">Horario hasta</label>
+                            <input type="time" id="horas-hasta" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diagnostico">Diagnóstico</label>
+                        <textarea id="diagnostico" rows="2" placeholder="Diagnóstico médico del interno..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Observaciones</label>
+                        <textarea id="description" rows="2" placeholder="Condiciones especiales, antecedentes de fuga, etc."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Buscar Agentes Disponibles</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- RIGHT: Preview -->
+            <div class="panel panel-preview">
+                <div id="preview-empty" class="preview-placeholder">
+                    <span>📋</span>
+                    <p>Complete el formulario y presione <strong>Buscar Agentes</strong> para ver la notificación y los agentes asignados.</p>
+                </div>
+
+                <div id="preview-content" class="hidden">
+                    <div class="notification-model">
+                        <h3>📋 Notificación a enviar</h3>
+                        <div id="notification-preview"></div>
+                    </div>
+
+                    <h3 class="agents-subtitle">Agentes a Contactar</h3>
+                    <ul id="agent-preview-list"></ul>
+                </div>
+
+                <div id="confirmed-section" class="confirmed-banner hidden">
+                    <h2>✅ Solicitud Confirmada</h2>
+                    <p id="confirmed-message"></p>
+                </div>
+
+                <div id="preview-actions" class="panel-footer hidden">
+                    <button id="confirm-request" class="btn-primary">✅ Confirmar Solicitud</button>
+                    <button id="cancel-request" class="btn-secondary">✖ Cancelar</button>
+                </div>
+
+                <div id="confirmed-actions" class="panel-footer hidden">
+                    <button id="new-request" class="btn-secondary">Nueva Solicitud</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/mockDatabase.js"></script>
+    <script src="scripts/agentSelector.js"></script>
+    <script src="scripts/requestTracker.js"></script>
+    <script src="scripts/app.js"></script>
+</body>
+</html>
