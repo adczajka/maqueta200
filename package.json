@@ -1,0 +1,24 @@
+{
+  "name": "spb-notifier",
+  "version": "1.0.0",
+  "description": "A web application for requesting agents for duty from a mockup database.",
+  "main": "src/scripts/app.js",
+  "scripts": {
+    "start": "live-server src",
+    "build": "echo 'Build step can be added here'",
+    "test": "echo 'No tests specified'"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "live-server": "^1.2.1"
+  },
+  "keywords": [
+    "agent",
+    "request",
+    "duty",
+    "web",
+    "application"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
